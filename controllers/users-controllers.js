@@ -4,29 +4,18 @@ const { validationResult } = require("express-validator");
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
 
-const DUMMY_USERS = [
-  {
-    id: "u1",
-    name: "Max Schwarz",
-    email: "test@test.com",
-    password: "testers",
-  },
-];
-
 const getUsers = async (req, res, next) => {
   let users;
   try {
-    users = User.find({}, "-password");
+    users = await User.find({}, "-password");
   } catch (err) {
     const error = new HttpError(
-      "Fetching users failed, please try again later",
+      "Fetching users failed, please try again later.",
       500
     );
     return next(error);
   }
-  res.json({
-    users: (await users).map((user) => user.toObject({ getters: true })),
-  });
+  res.json({ users: users.map((user) => user.toObject({ getters: true })) });
 };
 
 const signup = async (req, res, next) => {
@@ -36,14 +25,16 @@ const signup = async (req, res, next) => {
       new HttpError("Invalid inputs passed, please check your data.", 422)
     );
   }
-  const { name, email, password, places } = req.body;
+  const { name, email, password } = req.body;
 
   let existingUser;
-
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
-    const error = new HttpError("Sign Up Failed", 500);
+    const error = new HttpError(
+      "Signing up failed, please try again later.",
+      500
+    );
     return next(error);
   }
 
@@ -60,13 +51,13 @@ const signup = async (req, res, next) => {
     email,
     image: "https://live.staticflickr.com/7631/26849088292_36fc52ee90_b.jpg",
     password,
-    places,
+    places: [],
   });
 
   try {
     await createdUser.save();
   } catch (err) {
-    const error = new HttpError("Sign Up Failed, please try again.", 500);
+    const error = new HttpError("Signing up failed, please try again.", 500);
     return next(error);
   }
 
@@ -81,7 +72,10 @@ const login = async (req, res, next) => {
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
-    const error = new HttpError("Log In Failed", 500);
+    const error = new HttpError(
+      "Logging in failed, please try again later.",
+      500
+    );
     return next(error);
   }
 
@@ -90,7 +84,6 @@ const login = async (req, res, next) => {
       "Invalid credentials, could not log you in.",
       401
     );
-
     return next(error);
   }
 
